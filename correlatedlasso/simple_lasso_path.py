@@ -44,7 +44,7 @@ if __name__ == "__main__":
     beta_star = generate_sparse_params(P, num_nonzeros)
 
     for rho in rhos:
-        for seed in range(10):
+        for seed in range(1):
             alphas, norms = run_lasso(beta_star, rho, seed)
             ax.loglog(alphas, norms, label=rf"$\rho={rho:.1f}$")
 
