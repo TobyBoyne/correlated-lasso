@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 from typing import Callable
 
-from lasso.optimal_lambda import optimal_lambda
+from lasso.optimal_lambda import optimal_lambda, lambda_path
 from data.sparse import generate_sparse_params
 import data.correlated as corr
+from lasso.max_euclidean import maximal_euclidean  
 
 def optimal_lambda_against_correlation(
     rhos: np.ndarray,
@@ -53,6 +55,23 @@ def plot_optimal_lambda_against_correlation(
     ax.fill_between(rhos, opt_lower, opt_upper, color=colour, alpha=0.3)
     return l
 
+def plot_lambda_path(
+    ax: plt.Axes,
+    alphas: np.ndarray,
+    means: np.ndarray,
+    stds: np.ndarray,
+    colour: str = "C0",
+) -> plt.Line2D:
+    l, *_ = ax.loglog(alphas, means, label="Mean", color=colour, linewidth=2)
+    # opt_lower = means - 0.5 * stds
+    # opt_upper = means + 0.5 * stds
+
+    # ax.plot(alphas, opt_lower, "--", color=colour)
+    # ax.plot(alphas, opt_upper, "--", color=colour)
+    # ax.fill_between(alphas, opt_lower, opt_upper, color=colour, alpha=0.3)
+
+    return l
+
 
 
 if __name__ == "__main__":
@@ -64,12 +83,13 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     ax: plt.Axes
+    cm = mpl.colormaps["viridis"]
 
     covariance_functions = (
         corr.all_correlated,
         corr.pairwise_correlated,
     )
-    colours = ("C0", "C1")
+    colours = (cm(0.0), cm(0.5))
 
     for cov_func, colour in zip(covariance_functions, colours):
         means, stds = optimal_lambda_against_correlation(
@@ -82,4 +102,25 @@ if __name__ == "__main__":
     ax.set_ylabel(r"Optimal regularisation, $\lambda_\text{opt}$")
     ax.set_title(r"Performance of LASSO for different $\rho$ values")
     ax.legend()
+    fig.savefig("figs/optimal_lambda_against_correlation.png", bbox_inches="tight")
+
+    # ---
+
+    fig, ax = plt.subplots()
+    ax: plt.Axes
+
+    alphas = np.geomspace(0.001, 0.5)
+    rhos = np.linspace(0.1, 0.9, num=5)
+    for rho in rhos:
+        cov = corr.pairwise_correlated(P, rho)
+        means, stds = lambda_path(beta_star, cov, alphas, sigma=0.1, N=100, runs=100)
+        l = plot_lambda_path(ax, alphas[::-1], means, stds, colour=cm(rho))
+        l.set_label(fr"$\rho={rho:.1f}$")
+
+    ax.set_xlabel(r"Regularisation parameter, $\lambda$")
+    ax.set_ylabel(r"Fit loss, $\| X( \hat \beta - \beta^* )\|_2$")
+    ax.set_title(r"Performance of LASSO for different $\rho$ values")
+    ax.legend()
+    fig.savefig("figs/lambda_path.png", bbox_inches="tight")
+
     plt.show()
