@@ -98,9 +98,14 @@ if __name__ == "__main__":
         l = plot_optimal_lambda_against_correlation(ax, rhos, means, stds, colour)
         l.set_label(cov_func.__name__)
 
-    ax.set_xlabel(r"Correlation parameter, $\rho$")
+        # hacky save to use elsewhere
+        if colour == colours[0]:
+            np.savez("figs/all_correlated_vs_corr.npz", rhos=rhos, means=means, stds=stds)
+            
+
+    ax.set_xlabel(r"Correlation parameter, $r$")
     ax.set_ylabel(r"Optimal regularisation, $\lambda_\text{opt}$")
-    ax.set_title(r"Performance of LASSO for different $\rho$ values")
+    ax.set_title(r"Performance of LASSO for different $r$ values")
     ax.legend()
     fig.savefig("figs/optimal_lambda_against_correlation.png", bbox_inches="tight")
 
@@ -115,11 +120,14 @@ if __name__ == "__main__":
         cov = corr.pairwise_correlated(P, rho)
         means, stds = lambda_path(beta_star, cov, alphas, sigma=0.1, N=100, runs=100)
         l = plot_lambda_path(ax, alphas[::-1], means, stds, colour=cm(rho))
-        l.set_label(fr"$\rho={rho:.1f}$")
+        l.set_label(fr"$r={rho:.1f}$")
 
+        # mins = alphas[::-1][np.argmin(means)]
+        # ax.scatter(mins, np.min(means), marker="x", color="tab:orange", 
+        #            s=100, zorder=10)
     ax.set_xlabel(r"Regularisation parameter, $\lambda$")
     ax.set_ylabel(r"Fit loss, $\| X( \hat \beta - \beta^* )\|_2$")
-    ax.set_title(r"Performance of LASSO for different $\rho$ values")
+    ax.set_title(r"Performance of LASSO for different $r$ values")
     ax.legend()
     fig.savefig("figs/lambda_path.png", bbox_inches="tight")
 
